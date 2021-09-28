@@ -76,6 +76,9 @@ var ErrSessionNotFound = errors.New("SessionID does not exists")
 // GetSessionData returns data related to session if sessionID is
 // found, errors otherwise
 func (m *SessionManager) GetSessionData(sessionID string) (map[string]interface{}, error) {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+
 	session, ok := m.sessions[sessionID]
 	if !ok {
 		return nil, ErrSessionNotFound
@@ -102,7 +105,7 @@ func (m *SessionManager) UpdateSessionData(sessionID string, data map[string]int
 	return nil
 }
 
-const SessionLifeTime = 5 * time.Second
+const SessionLifeTime = 6 * time.Second
 
 func clearSessionData(m *SessionManager) {
 	for {
@@ -114,9 +117,9 @@ func clearSessionData(m *SessionManager) {
 				delete(m.sessions, key)
 			}
 		}
-
 		m.mu.Unlock()
-		time.Sleep(SessionLifeTime)
+
+		time.Sleep(SessionLifeTime / 2)
 	}
 }
 
