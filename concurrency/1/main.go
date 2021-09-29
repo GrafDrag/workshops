@@ -15,15 +15,16 @@ import (
 )
 
 func producer(stream Stream, c chan *Tweet) {
+	defer wg.Done()
 	for tweet, err := stream.Next(); err == nil; tweet, err = stream.Next() {
 		c <- tweet
 	}
 
 	close(c)
-	wg.Done()
 }
 
 func consumer(c chan *Tweet) {
+	defer wg.Done()
 	for t := range c {
 		if t.IsTalkingAboutGo() {
 			fmt.Println(t.Username, "\ttweets about golang")
@@ -31,7 +32,6 @@ func consumer(c chan *Tweet) {
 			fmt.Println(t.Username, "\tdoes not tweet about golang")
 		}
 	}
-	wg.Done()
 }
 
 var wg sync.WaitGroup
