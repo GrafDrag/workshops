@@ -53,13 +53,13 @@ func NewSessionManager() *SessionManager {
 
 // CreateSession creates a new session and returns the sessionID
 func (m *SessionManager) CreateSession() (string, error) {
-	m.mu.Lock()
-	defer m.mu.Unlock()
-
 	sessionID, err := MakeSessionID()
 	if err != nil {
 		return "", err
 	}
+
+	m.mu.Lock()
+	defer m.mu.Unlock()
 
 	m.sessions[sessionID] = Session{
 		Data:    make(map[string]interface{}),
