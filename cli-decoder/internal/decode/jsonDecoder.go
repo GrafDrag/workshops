@@ -12,7 +12,7 @@ type JSONDecoder struct {
 	str   []byte
 }
 
-func (d *JSONDecoder) Save(str string) error {
+func (d *JSONDecoder) SetHash(str string) error {
 	d.str = []byte(str)
 
 	if !d.validator() {

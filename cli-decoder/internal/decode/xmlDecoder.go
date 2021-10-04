@@ -12,7 +12,7 @@ type XMLDecoder struct {
 	str   []byte
 }
 
-func (d *XMLDecoder) Save(str string) error {
+func (d *XMLDecoder) SetHash(str string) error {
 	d.str = []byte(str)
 
 	if !d.validator() {

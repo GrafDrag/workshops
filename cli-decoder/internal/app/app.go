@@ -7,21 +7,21 @@ import (
 	"io"
 )
 
-type CLI struct {
+type App struct {
 	decoder decode.Decoder
 	in      *bufio.Scanner
 	out     io.Writer
 }
 
-func NewCLI(decoder decode.Decoder, in io.Reader, out io.Writer) *CLI {
-	return &CLI{
+func NewCLI(decoder decode.Decoder, in io.Reader, out io.Writer) *App {
+	return &App{
 		decoder: decoder,
 		in:      bufio.NewScanner(in),
 		out:     out,
 	}
 }
 
-func (c CLI) Run() {
+func (c App) Run() {
 	fmt.Fprintln(c.out, "Application run...")
 	defer func() {
 		if r := recover(); r != nil {
@@ -30,13 +30,13 @@ func (c CLI) Run() {
 	}()
 
 	for {
-		if err := c.decoder.Save(c.readLine()); err != nil {
+		if err := c.decoder.SetHash(c.readLine()); err != nil {
 			fmt.Fprint(c.out, "Error: ", err)
 		}
 	}
 }
 
-func (c CLI) readLine() string {
+func (c App) readLine() string {
 	c.in.Scan()
 	return c.in.Text()
 }
