@@ -9,8 +9,9 @@ import (
 )
 
 type Server struct {
-	router *mux.Router
-	logger *logrus.Logger
+	userLocalization time.Location
+	router           *mux.Router
+	logger           *logrus.Logger
 }
 
 const (
@@ -33,18 +34,6 @@ func (s Server) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	s.router.ServeHTTP(w, r)
 }
 
-func (s Server) setLocalization(next http.Handler) http.Handler {
-	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		loc, err := time.LoadLocation(defaultLocalization)
-		if err != nil {
-			s.logger.Fatal(err)
-		}
-
-		fmt.Println(time.Now().In(loc))
-		next.ServeHTTP(w, r)
-	})
-}
-
 func (s *Server) authenticateUser(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		fmt.Println("auth user")
@@ -58,5 +47,17 @@ func (s Server) setContentType(next http.Handler) http.Handler {
 		w.Header().Set("content-type", jsonContentType)
 
 		next.ServeHTTP(w, r)
+	})
+}
+
+func (s Server) logRequest(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		s.logger.Infof("started %s %s", r.Method, r.RequestURI)
+
+		start := time.Now()
+
+		next.ServeHTTP(w, r)
+
+		s.logger.Infof("completed with in %v", time.Now().Sub(start))
 	})
 }

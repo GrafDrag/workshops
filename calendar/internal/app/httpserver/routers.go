@@ -23,9 +23,9 @@ type Route struct {
 type Routes []Route
 
 func configureRouter(s *Server) {
-
-	s.router.Use(s.setLocalization)
 	s.router.Use(s.setContentType)
+	s.router.Use(s.logRequest)
+
 	for _, route := range routes {
 		s.router.HandleFunc(route.Path, route.HandlerFunc).Methods(route.Method).Name(route.Name)
 	}
