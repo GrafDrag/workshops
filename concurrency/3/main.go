@@ -18,22 +18,26 @@
 package main
 
 import (
-	"errors"
-	"log"
 	"crypto/rand"
 	"encoding/base64"
+	"errors"
 	"io"
+	"log"
+	"sync"
+	"time"
 )
 
 // SessionManager keeps track of all sessions from creation, updating
 // to destroying.
 type SessionManager struct {
+	mu       sync.Mutex
 	sessions map[string]Session
 }
 
 // Session stores the session's data
 type Session struct {
-	Data map[string]interface{}
+	Data    map[string]interface{}
+	Updated time.Time
 }
 
 // NewSessionManager creates a new sessionManager
@@ -41,6 +45,8 @@ func NewSessionManager() *SessionManager {
 	m := &SessionManager{
 		sessions: make(map[string]Session),
 	}
+
+	go clearSessionData(m)
 
 	return m
 }
@@ -52,8 +58,12 @@ func (m *SessionManager) CreateSession() (string, error) {
 		return "", err
 	}
 
+	m.mu.Lock()
+	defer m.mu.Unlock()
+
 	m.sessions[sessionID] = Session{
-		Data: make(map[string]interface{}),
+		Data:    make(map[string]interface{}),
+		Updated: time.Now(),
 	}
 
 	return sessionID, nil
@@ -66,6 +76,9 @@ var ErrSessionNotFound = errors.New("SessionID does not exists")
 // GetSessionData returns data related to session if sessionID is
 // found, errors otherwise
 func (m *SessionManager) GetSessionData(sessionID string) (map[string]interface{}, error) {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+
 	session, ok := m.sessions[sessionID]
 	if !ok {
 		return nil, ErrSessionNotFound
@@ -75,6 +88,9 @@ func (m *SessionManager) GetSessionData(sessionID string) (map[string]interface{
 
 // UpdateSessionData overwrites the old session data with the new one
 func (m *SessionManager) UpdateSessionData(sessionID string, data map[string]interface{}) error {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+
 	_, ok := m.sessions[sessionID]
 	if !ok {
 		return ErrSessionNotFound
@@ -82,10 +98,29 @@ func (m *SessionManager) UpdateSessionData(sessionID string, data map[string]int
 
 	// Hint: you should renew expiry of the session here
 	m.sessions[sessionID] = Session{
-		Data: data,
+		Data:    data,
+		Updated: time.Now(),
 	}
 
 	return nil
+}
+
+const SessionLifeTime = 6 * time.Second
+
+func clearSessionData(m *SessionManager) {
+	for {
+		m.mu.Lock()
+		t := time.Now()
+
+		for key, session := range m.sessions {
+			if t.Sub(session.Updated) > SessionLifeTime {
+				delete(m.sessions, key)
+			}
+		}
+		m.mu.Unlock()
+
+		time.Sleep(SessionLifeTime / 2)
+	}
 }
 
 func main() {
