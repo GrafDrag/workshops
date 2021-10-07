@@ -13,7 +13,7 @@ build:
 
 test:
 	@ echo "-> running tests ..."
-	@ CGO_ENABLED=1 go test -race ./...
+	@ CGO_ENABLED=1 go test -v -race ./...
 .PHONY: test
 
 lint:

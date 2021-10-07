@@ -1,7 +1,6 @@
 package httpserver
 
 import (
-	"calendar/internal/app/httpserver/handler"
 	"fmt"
 	"net/http"
 )
@@ -13,97 +12,26 @@ const (
 	methodDelete = "DELETE"
 )
 
-type Route struct {
-	Name        string
-	Method      string
-	Path        string
-	HandlerFunc http.HandlerFunc
-}
-
-type Routes []Route
-
 func configureRouter(s *Server) {
 	s.router.Use(s.setContentType)
 	s.router.Use(s.logRequest)
 
-	for _, route := range routes {
-		s.router.HandleFunc(route.Path, route.HandlerFunc).Methods(route.Method).Name(route.Name)
-	}
+	s.router.HandleFunc("/", Index).Methods(methodGet).Name("Index")
+	s.router.HandleFunc("/login", s.HandleAuth).Methods(methodPost).Name("Login")
+	s.router.HandleFunc("/logout", s.HandleLogout).Methods(methodGet).Name("Logout")
 
 	auth := s.router.PathPrefix("/api").Subrouter()
 	auth.Use(s.authenticateUser)
-	for _, route := range authRoutes {
-		auth.HandleFunc(route.Path, route.HandlerFunc).Methods(route.Method).Name(route.Name)
-	}
+
+	auth.HandleFunc("/user", s.HandelUpdateUser).Methods(methodPut).Name("Update user")
+	auth.HandleFunc("/events", s.HandleListEvents).Methods(methodGet).Name("Get list events")
+	auth.HandleFunc("/events", s.HandleCreateEvent).Methods(methodPost).Name("Create event")
+	auth.HandleFunc("/event/{id}", s.HandleGetEventsById).Methods(methodGet).Name("Get event by id")
+	auth.HandleFunc("/event/{id}", s.HandleUpdateEvent).Methods(methodPut).Name("Update event")
+	auth.HandleFunc("/event/{id}", s.HandleDeleteEvent).Methods(methodDelete).Name("Delete event")
+
 }
 
 func Index(w http.ResponseWriter, r *http.Request) {
 	fmt.Fprintf(w, "Hello World!")
-}
-
-var routes = Routes{
-	Route{
-		"Index",
-		methodGet,
-		"/",
-		Index,
-	},
-
-	Route{
-		"Login",
-		methodPost,
-		"/login",
-		handler.HandleAuth,
-	},
-
-	Route{
-		"Logout",
-		methodGet,
-		"/logout",
-		handler.HandleLogout,
-	},
-}
-
-var authRoutes = Routes{
-	Route{
-		"Update user",
-		methodPut,
-		"/user",
-		handler.HandelUpdateUser,
-	},
-
-	Route{
-		"Get list events",
-		methodGet,
-		"/events",
-		handler.HandleListEvents,
-	},
-
-	Route{
-		"Create event",
-		methodPost,
-		"/events",
-		handler.HandleCreateEvent,
-	},
-
-	Route{
-		"Get event by id",
-		methodGet,
-		"/event/{id}",
-		handler.HandleGetEventsById,
-	},
-
-	Route{
-		"Update event",
-		methodPut,
-		"/event/{id}",
-		handler.HandleUpdateEvent,
-	},
-
-	Route{
-		"Delete event",
-		methodDelete,
-		"/event/{id}",
-		handler.HandleDeleteEvent,
-	},
 }

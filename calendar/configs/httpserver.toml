@@ -1,2 +1,5 @@
 bind_addr = ":5000"
 log_level = "debug"
+
+jwt_secret_key = "287zQ!xOj[aCkQGR2to@jVwy#PCAe"
+jwt_expiration_hours = 4

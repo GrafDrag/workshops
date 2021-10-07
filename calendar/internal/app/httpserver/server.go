@@ -1,7 +1,9 @@
 package httpserver
 
 import (
-	"fmt"
+	"calendar/internal/app/httpserver/auth"
+	"calendar/internal/store"
+	"encoding/json"
 	"github.com/gorilla/mux"
 	"github.com/sirupsen/logrus"
 	"net/http"
@@ -9,20 +11,24 @@ import (
 )
 
 type Server struct {
-	userLocalization time.Location
+	store            store.Store
 	router           *mux.Router
 	logger           *logrus.Logger
+	jwtWrapper       *auth.JwtWrapper
+	userLocalization time.Location
 }
 
 const (
 	jsonContentType     = "application/json"
-	defaultLocalization = "America/Chicago"
+	defaultLocalization = "Europe/Kiev"
 )
 
-func NewServer() *Server {
+func NewServer(store store.Store, wrapper *auth.JwtWrapper) *Server {
 	s := &Server{
-		router: mux.NewRouter(),
-		logger: logrus.New(),
+		store:      store,
+		router:     mux.NewRouter(),
+		logger:     logrus.New(),
+		jwtWrapper: wrapper,
 	}
 
 	configureRouter(s)
@@ -34,30 +40,12 @@ func (s Server) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	s.router.ServeHTTP(w, r)
 }
 
-func (s *Server) authenticateUser(next http.Handler) http.Handler {
-	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		fmt.Println("auth user")
-
-		next.ServeHTTP(w, r)
-	})
+func (s Server) sendError(w http.ResponseWriter, statusCode int, data interface{}) {
+	w.WriteHeader(statusCode)
+	json.NewEncoder(w).Encode(data)
 }
 
-func (s Server) setContentType(next http.Handler) http.Handler {
-	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		w.Header().Set("content-type", jsonContentType)
-
-		next.ServeHTTP(w, r)
-	})
-}
-
-func (s Server) logRequest(next http.Handler) http.Handler {
-	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		s.logger.Infof("started %s %s", r.Method, r.RequestURI)
-
-		start := time.Now()
-
-		next.ServeHTTP(w, r)
-
-		s.logger.Infof("completed with in %v", time.Now().Sub(start))
-	})
+func (s Server) sendSuccess(w http.ResponseWriter, data interface{}) {
+	w.WriteHeader(http.StatusOK)
+	json.NewEncoder(w).Encode(data)
 }
