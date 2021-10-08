@@ -2,6 +2,7 @@ package auth_test
 
 import (
 	"calendar/internal/app/httpserver/auth"
+	"calendar/internal/model"
 	"github.com/stretchr/testify/assert"
 	"os"
 	"testing"
@@ -10,7 +11,7 @@ import (
 var (
 	secretKey = "secretkey"
 	issuer    = "AuthService"
-	login     = "test"
+	userID    = 1
 )
 
 func TestJwtWrapper_GenerateToken(t *testing.T) {
@@ -19,8 +20,10 @@ func TestJwtWrapper_GenerateToken(t *testing.T) {
 		Issuer:          issuer,
 		ExpirationHours: 24,
 	}
+	u := model.TestUser(t)
+	u.ID = userID
 
-	generateToken, err := jwtWrapper.GenerateToken(login)
+	generateToken, err := jwtWrapper.GenerateToken(u)
 	assert.NoError(t, err)
 
 	os.Setenv("testToken", generateToken)
@@ -37,7 +40,6 @@ func TestJwtWrapper_ValidateToken(t *testing.T) {
 	claims, err := jwtWrapper.ValidateToken(encodedToken)
 	assert.NoError(t, err)
 
-	assert.Equal(t, login, claims.Login)
+	assert.Equal(t, userID, claims.ID)
 	assert.Equal(t, issuer, claims.Issuer)
-
 }

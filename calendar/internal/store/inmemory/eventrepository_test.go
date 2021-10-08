@@ -18,7 +18,10 @@ func TestEventRepository_Create(t *testing.T) {
 func TestEventRepository_FindById(t *testing.T) {
 	s := inmemory.New()
 	e := model.TestEvent(t)
-	s.Event().Create(e)
+	if err := s.Event().Create(e); err != nil {
+		t.Fatal("could not create event")
+	}
+
 	r, err := s.Event().FindById(e.ID)
 
 	assert.NoError(t, err)
@@ -29,7 +32,10 @@ func TestEventRepository_Update(t *testing.T) {
 	title := "New title"
 	s := inmemory.New()
 	e := model.TestEvent(t)
-	s.Event().Create(e)
+	if err := s.Event().Create(e); err != nil {
+		t.Fatal("could not create event")
+	}
+
 	e.Title = title
 	assert.NoError(t, s.Event().Update(e))
 

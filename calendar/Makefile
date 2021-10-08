@@ -20,3 +20,8 @@ lint:
 	@ echo "-> running linters ..."
 	@ golangci-lint run ./...
 .PHONY: lint
+
+cover:
+	@ echo "-> running coverage test ..."
+	@ go test -cover ./...
+.PHONY: cover

@@ -18,7 +18,10 @@ func TestUserRepository_Create(t *testing.T) {
 func TestUserRepository_FindById(t *testing.T) {
 	s := inmemory.New()
 	u := model.TestUser(t)
-	s.User().Create(u)
+	if err := s.User().Create(u); err != nil {
+		t.Fatal("could not create user")
+	}
+
 	r, err := s.User().FindById(u.ID)
 
 	assert.NoError(t, err)
@@ -28,7 +31,10 @@ func TestUserRepository_FindById(t *testing.T) {
 func TestUserRepository_FindByLogin(t *testing.T) {
 	s := inmemory.New()
 	u := model.TestUser(t)
-	s.User().Create(u)
+	if err := s.User().Create(u); err != nil {
+		t.Fatal("could not create user")
+	}
+
 	r, err := s.User().FindByLogin(u.Login)
 
 	assert.NoError(t, err)
@@ -39,7 +45,10 @@ func TestUserRepository_Update(t *testing.T) {
 	tz := "Europe/Kiev"
 	s := inmemory.New()
 	u := model.TestUser(t)
-	s.User().Create(u)
+	if err := s.User().Create(u); err != nil {
+		t.Fatal("could not create user")
+	}
+
 	u.Timezone = tz
 	assert.NoError(t, s.User().Update(u))
 

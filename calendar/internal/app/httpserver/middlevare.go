@@ -7,6 +7,12 @@ import (
 	"time"
 )
 
+type ctxUserKey int
+
+const (
+	KeyUserID ctxUserKey = iota
+)
+
 func (s *Server) authenticateUser(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		tokenHeader := r.Header.Get("Authorization")
@@ -28,8 +34,8 @@ func (s *Server) authenticateUser(next http.Handler) http.Handler {
 			return
 		}
 
-		s.logger.Infof("User auth by token: %v", claims.Login)
-		ctx := context.WithValue(r.Context(), "user", claims.Login)
+		s.logger.Infof("User auth by token: %v", claims.ID)
+		ctx := context.WithValue(r.Context(), KeyUserID, claims.ID)
 		r = r.WithContext(ctx)
 
 		next.ServeHTTP(w, r)
@@ -38,7 +44,7 @@ func (s *Server) authenticateUser(next http.Handler) http.Handler {
 
 func (s Server) setContentType(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		w.Header().Set("content-type", jsonContentType)
+		w.Header().Set("content-type", JsonContentType)
 
 		next.ServeHTTP(w, r)
 	})

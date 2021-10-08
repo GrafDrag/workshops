@@ -72,6 +72,7 @@ func TestUser_CheckPassword(t *testing.T) {
 	u := model.TestUser(t)
 
 	u.Password = p
-	u.BeforeCreate()
+
+	assert.NoError(t, u.BeforeCreate())
 	assert.NoError(t, u.CheckPassword(p))
 }

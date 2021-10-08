@@ -17,8 +17,8 @@ func (u User) Validate() error {
 	return validation.ValidateStruct(
 		&u,
 		validation.Field(&u.Login, validation.Required, validation.Length(6, 20).Error("User login invalid")),
-		validation.Field(&u.Password, validation.By(requiredIf(u.EncryptedPassword == "")), validation.Length(6, 20)),
-		validation.Field(&u.Timezone, validation.By(timeZoneValidator(u.Timezone))),
+		validation.Field(&u.Password, validation.By(RequiredIf(u.EncryptedPassword == "")), validation.Length(6, 20)),
+		validation.Field(&u.Timezone, validation.By(TimeZoneValidator(u.Timezone))),
 	)
 }
 

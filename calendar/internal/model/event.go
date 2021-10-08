@@ -22,8 +22,8 @@ func (e Event) Validate() error {
 		validation.Field(&e.Title, validation.Required, validation.Length(1, 150)),
 		validation.Field(&e.Description, validation.Required, validation.Length(5, 1000)),
 
-		validation.Field(&e.Time, validation.By(datetimeValidator(e.Time))),
-		validation.Field(&e.Timezone, validation.By(timeZoneValidator(e.Timezone))),
+		validation.Field(&e.Time, validation.By(DatetimeValidator(e.Time))),
+		validation.Field(&e.Timezone, validation.By(TimeZoneValidator(e.Timezone))),
 
 		validation.Field(&e.Notes, validation.Each(validation.Length(5, 50))),
 	)

@@ -7,20 +7,17 @@ import (
 	"github.com/gorilla/mux"
 	"github.com/sirupsen/logrus"
 	"net/http"
-	"time"
 )
 
 type Server struct {
-	store            store.Store
-	router           *mux.Router
-	logger           *logrus.Logger
-	jwtWrapper       *auth.JwtWrapper
-	userLocalization time.Location
+	store      store.Store
+	router     *mux.Router
+	logger     *logrus.Logger
+	jwtWrapper *auth.JwtWrapper
 }
 
 const (
-	jsonContentType     = "application/json"
-	defaultLocalization = "Europe/Kiev"
+	JsonContentType = "application/json"
 )
 
 func NewServer(store store.Store, wrapper *auth.JwtWrapper) *Server {
@@ -40,12 +37,18 @@ func (s Server) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	s.router.ServeHTTP(w, r)
 }
 
-func (s Server) sendError(w http.ResponseWriter, statusCode int, data interface{}) {
+func (s Server) sendError(w http.ResponseWriter, statusCode int, errStr string) {
 	w.WriteHeader(statusCode)
-	json.NewEncoder(w).Encode(data)
+	err := json.NewEncoder(w).Encode(map[string]string{"error": errStr})
+	if err != nil {
+		s.logger.Error("failed encode response", err)
+	}
 }
 
 func (s Server) sendSuccess(w http.ResponseWriter, data interface{}) {
 	w.WriteHeader(http.StatusOK)
-	json.NewEncoder(w).Encode(data)
+	err := json.NewEncoder(w).Encode(data)
+	if err != nil {
+		s.logger.Error("failed encode response", err)
+	}
 }

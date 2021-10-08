@@ -1,6 +1,7 @@
 package auth
 
 import (
+	"calendar/internal/model"
 	"errors"
 	"github.com/dgrijalva/jwt-go"
 	"time"
@@ -13,13 +14,13 @@ type JwtWrapper struct {
 }
 
 type JwtClaim struct {
-	Login string
+	ID int
 	jwt.StandardClaims
 }
 
-func (j *JwtWrapper) GenerateToken(login string) (string, error) {
+func (j *JwtWrapper) GenerateToken(user *model.User) (string, error) {
 	claims := &JwtClaim{
-		Login: login,
+		ID: user.ID,
 		StandardClaims: jwt.StandardClaims{
 			ExpiresAt: time.Now().Add(time.Hour * time.Duration(j.ExpirationHours)).Unix(),
 			Issuer:    j.Issuer,

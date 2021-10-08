@@ -26,12 +26,12 @@ func (s *Server) HandleAuth(w http.ResponseWriter, r *http.Request) {
 	form := &LoginForm{}
 
 	if err := json.NewDecoder(r.Body).Decode(form); err != nil {
-		s.sendError(w, http.StatusBadRequest, map[string]string{"error": err.Error()})
+		s.sendError(w, http.StatusBadRequest, err.Error())
 		return
 	}
 
 	if err := form.Validate(); err != nil {
-		s.sendError(w, http.StatusBadRequest, map[string]string{"error": err.Error()})
+		s.sendError(w, http.StatusBadRequest, err.Error())
 		return
 	}
 
@@ -54,7 +54,7 @@ func (s *Server) HandleAuth(w http.ResponseWriter, r *http.Request) {
 	}
 
 	form.Password = ""
-	form.Token, err = s.jwtWrapper.GenerateToken(u.Login)
+	form.Token, err = s.jwtWrapper.GenerateToken(u)
 	if err != nil {
 		s.sendError(w, http.StatusInternalServerError, err.Error())
 		return
@@ -67,6 +67,53 @@ func (s *Server) HandleLogout(w http.ResponseWriter, r *http.Request) {
 	fmt.Fprintf(w, "HandleLogout")
 }
 
+type UpdateUserForm struct {
+	Login    string `json:"login"`
+	Timezone string `json:"timezone"`
+}
+
+func (f UpdateUserForm) Validate() error {
+	return validation.ValidateStruct(
+		&f,
+		validation.Field(&f.Login, validation.Length(6, 20)),
+		validation.Field(&f.Timezone, validation.By(model.TimeZoneValidator(f.Timezone))),
+	)
+}
+
 func (s *Server) HandelUpdateUser(w http.ResponseWriter, r *http.Request) {
-	fmt.Fprintf(w, "HandelUpdateUser")
+	form := &UpdateUserForm{}
+
+	if err := json.NewDecoder(r.Body).Decode(form); err != nil {
+		s.sendError(w, http.StatusBadRequest, err.Error())
+		return
+	}
+
+	if err := form.Validate(); err != nil {
+		s.sendError(w, http.StatusBadRequest, err.Error())
+		return
+	}
+
+	userID := r.Context().Value(KeyUserID).(int)
+	u, err := s.store.User().FindById(userID)
+	if err != nil {
+		s.sendError(w, http.StatusNotFound, errUserNotFound)
+		return
+	}
+
+	if form.Login != u.Login {
+		if _, err := s.store.User().FindByLogin(form.Login); err == nil {
+			s.sendError(w, http.StatusBadRequest, errUserExist)
+			return
+		}
+	}
+
+	u.Login = form.Login
+	u.Timezone = form.Timezone
+
+	if err := s.store.User().Update(u); err != nil {
+		s.sendError(w, http.StatusInternalServerError, err.Error())
+		return
+	}
+
+	s.sendSuccess(w, form)
 }
