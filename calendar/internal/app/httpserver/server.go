@@ -52,3 +52,7 @@ func (s Server) sendSuccess(w http.ResponseWriter, data interface{}) {
 		s.logger.Error("failed encode response", err)
 	}
 }
+
+func (s Server) sendSuccessfullySaved(w http.ResponseWriter) {
+	w.WriteHeader(http.StatusCreated)
+}

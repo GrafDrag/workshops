@@ -26,9 +26,9 @@ func TimeZoneValidator(timezone string) validation.RuleFunc {
 	}
 }
 
-func DatetimeValidator(datetime string) validation.RuleFunc {
+func DatetimeValidator(layout string, datetime string) validation.RuleFunc {
 	return func(value interface{}) error {
-		_, err := time.Parse("2006-01-02 15:04:05", datetime)
+		_, err := time.Parse(layout, datetime)
 		if err != nil {
 			return errors.New("failed validation time")
 		}
