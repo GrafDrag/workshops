@@ -9,11 +9,11 @@ func configureRouter(s *Server) {
 	s.router.Use(s.logRequest)
 
 	s.router.HandleFunc("/login", s.HandleAuth).Methods(http.MethodPost).Name("Login")
-	s.router.HandleFunc("/logout", s.HandleLogout).Methods(http.MethodGet).Name("Logout")
+	s.router.Handle("/logout", s.authenticateUser(http.HandlerFunc(s.HandleLogout))).Methods(http.MethodGet).Name("Logout")
 
 	auth := s.router.PathPrefix("/api").Subrouter()
-	auth.Use(s.authenticateUser)
 
+	auth.Use(s.authenticateUser)
 	auth.HandleFunc("/user", s.HandelUpdateUser).Methods(http.MethodPut).Name("Update user")
 	auth.HandleFunc("/events", s.HandleListEvents).Methods(http.MethodGet).Name("Get list events")
 	auth.HandleFunc("/events", s.HandleCreateEvent).Methods(http.MethodPost).Name("Create event")

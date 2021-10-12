@@ -43,3 +43,32 @@ func TestEventRepository_Update(t *testing.T) {
 	assert.NoError(t, err)
 	assert.Equal(t, r.Title, title)
 }
+
+func TestEventRepository_Delete(t *testing.T) {
+	s := inmemory.New()
+	e := model.TestEvent(t)
+	if err := s.Event().Create(e); err != nil {
+		t.Fatal("could not create event")
+	}
+
+	assert.NoError(t, s.Event().Delete(e.ID))
+
+	_, err := s.Event().FindById(e.ID)
+	assert.Error(t, err)
+}
+
+func TestEventRepository_FindByParams(t *testing.T) {
+	s := inmemory.New()
+	e := model.TestEvent(t)
+	if err := s.Event().Create(e); err != nil {
+		t.Fatal("could not create event")
+	}
+
+	search := model.SearchEvent{
+		UserID: e.UserID,
+		Title:  e.Title,
+	}
+
+	events := s.Event().FindByParams(search)
+	assert.True(t, len(events) > 0)
+}

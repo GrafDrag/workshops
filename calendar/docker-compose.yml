@@ -1,18 +1,32 @@
-version: "3.9"
+version: "3.3"
 
 services:
-    db:
-        image: postgres:alpine
-        ports:
-            - "5432:5432"
-        volumes:
-            - ./initdb.d:/docker-entrypoint-initdb.d/
-            - database-data:/var/lib/postgresql/data/
-        environment:
-            POSTGRES_DB: gotest
-            POSTGRES_UESR: gouser
-            POSTGRES_PASSWORD: gopassword
-
-
-volumes:
-  database-data:
+  pgsql:
+    image: postgres:alpine
+    container_name: pgsql
+    volumes:
+      - ./data/postgres:/var/lib/postgresql/data postgres
+    ports:
+      - "5432:5432"
+    environment:
+      POSTGRES_USER: root
+      POSTGRES_PASSWORD: root
+      POSTGRES_DB: calendar
+    networks:
+      - internal
+  redis:
+    image: "redis:alpine"
+    container_name: redis
+    ports:
+      - "6379:6379"
+    volumes:
+      - ./deployments/data/redis:/var/lib/redis
+      - ./deployments/config/redis.conf:/usr/local/etc/redis/redis.conf
+    environment:
+      - ALLOW_EMPTY_PASSWORD=yes
+      - REDIS_REPLICATION_MODE=master
+    networks:
+      - internal
+networks:
+  internal:
+    driver: bridge

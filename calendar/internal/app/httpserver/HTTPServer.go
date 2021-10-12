@@ -16,7 +16,8 @@ func Start(config *Config) error {
 		ExpirationHours: config.JwtExpHours,
 		Issuer:          "AuthService",
 	}
-	server = NewServer(store, wrapper)
+	session := inmemory.NewSession()
+	server = NewServer(store, wrapper, session)
 
 	logrus.Infof("Server starting on %v...", config.BindAddr)
 	return http.ListenAndServe(config.BindAddr, server)

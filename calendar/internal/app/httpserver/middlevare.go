@@ -34,9 +34,21 @@ func (s *Server) authenticateUser(next http.Handler) http.Handler {
 			return
 		}
 
-		s.logger.Infof("User auth by token: %v", claims.ID)
-		ctx := context.WithValue(r.Context(), KeyUserID, claims.ID)
-		r = r.WithContext(ctx)
+		userSession, err := s.getUserSession(claims.ID)
+		if err != nil {
+			s.sendError(w, http.StatusForbidden, errSessionNotFound)
+			return
+		}
+
+		if _, ok := userSession[splitted[1]]; !ok {
+			s.sendError(w, http.StatusForbidden, errInvalidAuthToken)
+			return
+		}
+
+		s.logger.Infof("User ID #%v auth by token", claims.ID)
+		ctxUserID := context.WithValue(r.Context(), KeyUserID, claims.ID)
+		r = r.WithContext(ctxUserID)
+		s.authToken = splitted[1]
 
 		next.ServeHTTP(w, r)
 	})

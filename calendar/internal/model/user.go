@@ -1,7 +1,7 @@
 package model
 
 import (
-	validation "github.com/go-ozzo/ozzo-validation"
+	validation "github.com/go-ozzo/ozzo-validation/v4"
 	"golang.org/x/crypto/bcrypt"
 )
 

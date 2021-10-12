@@ -12,6 +12,7 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"reflect"
+	"strconv"
 	"testing"
 	"time"
 )
@@ -23,6 +24,7 @@ var (
 		Issuer:          "AuthService",
 		ExpirationHours: 24,
 	}
+	session = inmemory.NewSession()
 )
 
 func TestUser_Login(t *testing.T) {
@@ -48,12 +50,15 @@ func TestUser_Logout(t *testing.T) {
 		rec := httptest.NewRecorder()
 
 		request, _ := http.NewRequest(http.MethodGet, "/logout", nil)
-		request.Header.Set("Authorization", token)
+		request.Header.Set("Authorization", fmt.Sprintf("Bearer %v", token))
 
 		server.ServeHTTP(rec, request)
 
 		assert.Equal(t, rec.Code, http.StatusOK)
 		assert.Equal(t, rec.Header().Get("content-type"), httpserver.JsonContentType)
+
+		server.ServeHTTP(rec, request)
+		assert.Equal(t, rec.Code, http.StatusForbidden)
 	})
 }
 
@@ -80,7 +85,7 @@ func TestUser_Update(t *testing.T) {
 
 		server.ServeHTTP(rec, request)
 
-		assert.Equal(t, rec.Code, http.StatusOK)
+		assert.Equal(t, rec.Code, http.StatusCreated)
 		assert.Equal(t, rec.Header().Get("content-type"), httpserver.JsonContentType)
 
 		got, _ := store.User().FindById(user.ID)
@@ -107,7 +112,7 @@ func TestUser_Update(t *testing.T) {
 
 		server.ServeHTTP(rec, request)
 
-		assert.Equal(t, rec.Code, http.StatusOK)
+		assert.Equal(t, rec.Code, http.StatusCreated)
 		assert.Equal(t, rec.Header().Get("content-type"), httpserver.JsonContentType)
 
 		got, _ := store.User().FindById(user.ID)
@@ -117,8 +122,10 @@ func TestUser_Update(t *testing.T) {
 
 func TestServer_HandleListEvents(t *testing.T) {
 	server := mustMakeServer()
-	token := getJWTToken(t, model.TestUser(t))
+	user := model.TestUser(t)
+	token := getJWTToken(t, user)
 	event := model.TestEvent(t)
+	event.UserID = user.ID
 	event.Timezone = "Europe/Kiev"
 	addEventToStore(t, event)
 	var cases = []struct {
@@ -234,9 +241,12 @@ func TestServer_HandleGetEventsById(t *testing.T) {
 
 	t.Run("test get event by id", func(t *testing.T) {
 		event := model.TestEvent(t)
+		user := model.TestUser(t)
 		rec := httptest.NewRecorder()
 
-		token := getJWTToken(t, model.TestUser(t))
+		token := getJWTToken(t, user)
+		event.UserID = user.ID
+
 		addEventToStore(t, event)
 
 		request, _ := http.NewRequest(http.MethodGet, fmt.Sprintf("/api/event/%d", event.ID), nil)
@@ -258,6 +268,7 @@ func TestServer_HandleGetEventsById(t *testing.T) {
 }
 
 func TestServer_HandleUpdateEvent(t *testing.T) {
+
 	cases := []struct {
 		name   string
 		field  string
@@ -280,7 +291,7 @@ func TestServer_HandleUpdateEvent(t *testing.T) {
 			name:   "update time",
 			field:  "time",
 			oField: "Time",
-			value:  time.Now().Add(50 * time.Minute).Format("2006-01-02 15:04:05"),
+			value:  time.Now().Add(50 * time.Minute).Format(model.EventDateLayout),
 		},
 		{
 			name:   "update timezone",
@@ -295,9 +306,11 @@ func TestServer_HandleUpdateEvent(t *testing.T) {
 	for _, item := range cases {
 		t.Run(item.name, func(t *testing.T) {
 			event := model.TestEvent(t)
+			user := model.TestUser(t)
 			rec := httptest.NewRecorder()
 
-			token := getJWTToken(t, model.TestUser(t))
+			token := getJWTToken(t, user)
+			event.UserID = user.ID
 			addEventToStore(t, event)
 
 			b := &bytes.Buffer{}
@@ -325,9 +338,11 @@ func TestServer_HandleDeleteEvent(t *testing.T) {
 	t.Run("delete event", func(t *testing.T) {
 		server := mustMakeServer()
 		event := model.TestEvent(t)
+		user := model.TestUser(t)
 		rec := httptest.NewRecorder()
 
-		token := getJWTToken(t, model.TestUser(t))
+		token := getJWTToken(t, user)
+		event.UserID = user.ID
 		addEventToStore(t, event)
 
 		request, _ := http.NewRequest(http.MethodDelete, fmt.Sprintf("/api/event/%d", event.ID), nil)
@@ -344,7 +359,7 @@ func TestServer_HandleDeleteEvent(t *testing.T) {
 }
 
 func mustMakeServer() *httpserver.Server {
-	return httpserver.NewServer(store, jwtWrapper)
+	return httpserver.NewServer(store, jwtWrapper, session)
 }
 
 func newGetLoginRequest(t *testing.T, login, password string) *http.Request {
@@ -367,6 +382,17 @@ func getJWTToken(t *testing.T, user *model.User) string {
 		t.Fatal("could not create user")
 	}
 	token, _ := jwtWrapper.GenerateToken(user)
+	jb, err := json.Marshal(map[string]bool{
+		token: true,
+	})
+
+	if err != nil {
+		t.Fatal("could not marshal user map session")
+	}
+
+	if err := session.Set(strconv.Itoa(user.ID), string(jb)); err != nil {
+		t.Fatal("could not save user session")
+	}
 
 	return token
 }

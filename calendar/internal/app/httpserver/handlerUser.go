@@ -3,8 +3,7 @@ package httpserver
 import (
 	"calendar/internal/model"
 	"encoding/json"
-	"fmt"
-	validation "github.com/go-ozzo/ozzo-validation"
+	validation "github.com/go-ozzo/ozzo-validation/v4"
 	"net/http"
 )
 
@@ -60,11 +59,35 @@ func (s *Server) HandleAuth(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	userSession, err := s.getUserSession(u.ID)
+	if err != nil {
+		s.sendError(w, http.StatusInternalServerError, err.Error())
+		return
+	}
+
+	userSession[form.Token] = true
+	err = s.setUserSession(u.ID, userSession)
+	if err != nil {
+		s.sendError(w, http.StatusInternalServerError, err.Error())
+		return
+	}
+
 	s.sendSuccess(w, form)
 }
 
 func (s *Server) HandleLogout(w http.ResponseWriter, r *http.Request) {
-	fmt.Fprintf(w, "HandleLogout")
+	userID := r.Context().Value(KeyUserID).(int)
+	userSession, err := s.getUserSession(userID)
+	if err != nil {
+		s.sendError(w, http.StatusInternalServerError, err.Error())
+		return
+	}
+
+	delete(userSession, s.authToken)
+	if err := s.setUserSession(userID, userSession); err != nil {
+		s.sendError(w, http.StatusInternalServerError, err.Error())
+		return
+	}
 }
 
 type UpdateUserForm struct {
@@ -75,7 +98,7 @@ type UpdateUserForm struct {
 func (f UpdateUserForm) Validate() error {
 	return validation.ValidateStruct(
 		&f,
-		validation.Field(&f.Login, validation.Length(6, 20)),
+		validation.Field(&f.Login, validation.When(f.Login != "", validation.Length(6, 20))),
 		validation.Field(&f.Timezone, validation.By(model.TimeZoneValidator(f.Timezone))),
 	)
 }
@@ -100,20 +123,25 @@ func (s *Server) HandelUpdateUser(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if form.Login != u.Login {
-		if _, err := s.store.User().FindByLogin(form.Login); err == nil {
-			s.sendError(w, http.StatusBadRequest, errUserExist)
-			return
+	if form.Login != "" {
+		if form.Login != u.Login {
+			if _, err := s.store.User().FindByLogin(form.Login); err == nil {
+				s.sendError(w, http.StatusBadRequest, errUserExist)
+				return
+			}
 		}
+
+		u.Login = form.Login
 	}
 
-	u.Login = form.Login
-	u.Timezone = form.Timezone
+	if form.Timezone != "" {
+		u.Timezone = form.Timezone
+	}
 
 	if err := s.store.User().Update(u); err != nil {
 		s.sendError(w, http.StatusInternalServerError, err.Error())
 		return
 	}
 
-	s.sendSuccess(w, form)
+	s.sendSuccessfullySaved(w)
 }
