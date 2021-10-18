@@ -2,7 +2,6 @@ package redis
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	"github.com/go-redis/redis/v8"
 )
@@ -24,7 +23,7 @@ func NewSession(client *redis.Client) *session {
 func (s *session) Get(key string) (string, error) {
 	v, err := s.redis.Get(ctx, key).Result()
 	if err != nil {
-		return "", errors.New(fmt.Sprintf("failed find key %s", key))
+		return "", fmt.Errorf("failed find key %s", key)
 	}
 
 	return v, nil
@@ -38,14 +37,14 @@ func (s *session) Set(key string, value string) error {
 func (s *session) Remove(key string) (string, error) {
 	val, err := s.Get(key)
 	if err != nil {
-		return "", errors.New(fmt.Sprintf("failed delete key %s", key))
+		return "", fmt.Errorf("failed delete key %s", key)
 	}
 	pipe := s.redis.Pipeline()
 
 	pipe.Del(ctx, key)
 	_, err = pipe.Exec(ctx)
 	if err != nil {
-		return "", errors.New(fmt.Sprintf("failed delete key %s", key))
+		return "", fmt.Errorf("failed delete key %s", key)
 	}
 
 	return val, nil
@@ -57,7 +56,7 @@ func (s *session) Flash() error {
 	pipe.FlushAll(ctx)
 	_, err := pipe.Exec(ctx)
 	if err != nil {
-		return errors.New(fmt.Sprintf("failed flash"))
+		return fmt.Errorf("failed flash")
 	}
 
 	return nil

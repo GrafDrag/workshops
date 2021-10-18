@@ -1,7 +1,6 @@
 package inmemory
 
 import (
-	"errors"
 	"fmt"
 )
 
@@ -18,7 +17,7 @@ func NewSession() *session {
 func (s *session) Get(key string) (string, error) {
 	v, ok := s.sessions[key]
 	if !ok {
-		return "", errors.New(fmt.Sprintf("failed find key %s", key))
+		return "", fmt.Errorf("failed find key %s", key)
 	}
 	return v, nil
 }

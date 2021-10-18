@@ -5,6 +5,7 @@ import (
 	"calendar/internal/store"
 	"database/sql"
 	"fmt"
+	"log"
 	"strings"
 )
 
@@ -18,7 +19,13 @@ func (r *EventRepository) FindByUser(userID int) ([]*model.Event, error) {
 		"SELECT id, user_id, title, description, time, timezone, duration, notes FROM events WHERE user_id = $1",
 		userID,
 	)
-	defer rows.Close()
+
+	defer func(rows *sql.Rows) {
+		err := rows.Close()
+		if err != nil {
+			log.Print("failed closing row!")
+		}
+	}(rows)
 
 	if err != nil {
 		return nil, err
@@ -33,7 +40,7 @@ func (r *EventRepository) FindByUser(userID int) ([]*model.Event, error) {
 		res = append(res, e)
 	}
 
-	return nil, err
+	return res, nil
 }
 
 func (r *EventRepository) FindByParams(search model.SearchEvent) ([]*model.Event, error) {
@@ -76,7 +83,12 @@ func (r *EventRepository) FindByParams(search model.SearchEvent) ([]*model.Event
 	if err != nil {
 		return nil, err
 	}
-	defer rows.Close()
+	defer func(rows *sql.Rows) {
+		err := rows.Close()
+		if err != nil {
+			log.Print("failed closing row!")
+		}
+	}(rows)
 
 	for rows.Next() {
 		e := &model.Event{}
