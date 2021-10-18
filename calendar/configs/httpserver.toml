@@ -1,5 +1,19 @@
 bind_addr = ":5000"
 log_level = "debug"
 
+[jwt]
 jwt_secret_key = "287zQ!xOj[aCkQGR2to@jVwy#PCAe"
 jwt_expiration_hours = 4
+
+[database]
+host = "localhost"
+port = 5432
+user = "root"
+password = "root"
+db = "calendar"
+
+[session]
+host = "localhost"
+port = 6379
+password = ""
+DB = 0

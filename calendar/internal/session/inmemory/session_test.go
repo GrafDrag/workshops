@@ -1,7 +1,7 @@
 package inmemory_test
 
 import (
-	"calendar/internal/store/inmemory"
+	"calendar/internal/session/inmemory"
 	"github.com/stretchr/testify/assert"
 	"testing"
 )

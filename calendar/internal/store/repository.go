@@ -10,8 +10,8 @@ type UserRepository interface {
 }
 
 type EventRepository interface {
-	FindByUser(userID int) []*model.Event
-	FindByParams(event model.SearchEvent) []*model.Event
+	FindByUser(userID int) ([]*model.Event, error)
+	FindByParams(event model.SearchEvent) ([]*model.Event, error)
 	Create(event *model.Event) error
 	FindById(ID int) (*model.Event, error)
 	Update(*model.Event) error

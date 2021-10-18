@@ -2,6 +2,7 @@ package httpserver
 
 import (
 	"calendar/internal/app/httpserver/auth"
+	"calendar/internal/session"
 	"calendar/internal/store"
 	"encoding/json"
 	"github.com/gorilla/mux"
@@ -12,7 +13,7 @@ import (
 
 type Server struct {
 	store      store.Store
-	session    store.Session
+	session    session.Session
 	router     *mux.Router
 	logger     *logrus.Logger
 	jwtWrapper *auth.JwtWrapper
@@ -23,7 +24,7 @@ const (
 	JsonContentType = "application/json"
 )
 
-func NewServer(store store.Store, wrapper *auth.JwtWrapper, session store.Session) *Server {
+func NewServer(store store.Store, wrapper *auth.JwtWrapper, session session.Session) *Server {
 	s := &Server{
 		store:      store,
 		session:    session,

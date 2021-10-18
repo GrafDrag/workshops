@@ -1,20 +1,38 @@
 package model
 
 import (
+	"database/sql/driver"
+	"encoding/json"
+	"errors"
 	"github.com/go-ozzo/ozzo-validation/v4"
 )
 
 const EventDateLayout = "2006-01-02 15:04"
 
 type Event struct {
-	ID          int      `json:"id"`
-	UserID      int      `json:"-"`
-	Title       string   `json:"title"`
-	Description string   `json:"description"`
-	Time        string   `json:"time"`
-	Timezone    string   `json:"timezone"`
-	Duration    int32    `json:"duration"`
-	Notes       []string `json:"notes,omitempty"`
+	ID          int    `json:"id"`
+	UserID      int    `json:"-"`
+	Title       string `json:"title"`
+	Description string `json:"description"`
+	Time        string `json:"time"`
+	Timezone    string `json:"timezone"`
+	Duration    int32  `json:"duration"`
+	Notes       Node   `json:"notes,omitempty"`
+}
+
+type Node []string
+
+func (n Node) Value() (driver.Value, error) {
+	return json.Marshal(n)
+}
+
+func (n *Node) Scan(value interface{}) error {
+	b, ok := value.([]byte)
+	if !ok {
+		return errors.New("type assertion to []byte failed")
+	}
+
+	return json.Unmarshal(b, &n)
 }
 
 func (e Event) Validate() error {

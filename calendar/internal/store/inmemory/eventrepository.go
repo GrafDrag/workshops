@@ -13,7 +13,7 @@ type EventRepository struct {
 	events map[int]*model.Event
 }
 
-func (r EventRepository) FindByUser(userID int) []*model.Event {
+func (r EventRepository) FindByUser(userID int) ([]*model.Event, error) {
 	var res []*model.Event
 
 	for _, event := range r.events {
@@ -22,10 +22,10 @@ func (r EventRepository) FindByUser(userID int) []*model.Event {
 		}
 	}
 
-	return res
+	return res, nil
 }
 
-func (r EventRepository) FindByParams(search model.SearchEvent) []*model.Event {
+func (r EventRepository) FindByParams(search model.SearchEvent) ([]*model.Event, error) {
 	res := make([]*model.Event, 0)
 
 	for _, event := range r.events {
@@ -73,7 +73,7 @@ func (r EventRepository) FindByParams(search model.SearchEvent) []*model.Event {
 		res = append(res, event)
 	}
 
-	return res
+	return res, nil
 }
 
 func (r EventRepository) Create(event *model.Event) error {

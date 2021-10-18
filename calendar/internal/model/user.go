@@ -3,13 +3,14 @@ package model
 import (
 	validation "github.com/go-ozzo/ozzo-validation/v4"
 	"golang.org/x/crypto/bcrypt"
+	"time"
 )
 
 type User struct {
-	ID                int
+	ID                int    `json:"id"`
 	Login             string `json:"login"`
 	Password          string `json:"password"`
-	EncryptedPassword string
+	EncryptedPassword string `json:"-"`
 	Timezone          string `json:"timezone"`
 }
 
@@ -30,6 +31,10 @@ func (u *User) BeforeCreate() error {
 		}
 
 		u.EncryptedPassword = enc
+	}
+
+	if u.Timezone == "" {
+		u.Timezone, _ = time.Now().Zone()
 	}
 
 	return nil

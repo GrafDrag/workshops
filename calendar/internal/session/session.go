@@ -1,4 +1,4 @@
-package store
+package session
 
 type Session interface {
 	Get(key string) (string, error)

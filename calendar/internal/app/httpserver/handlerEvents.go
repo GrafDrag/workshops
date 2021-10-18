@@ -26,7 +26,13 @@ func (s *Server) HandleListEvents(w http.ResponseWriter, r *http.Request) {
 		TimeTo:   q.Get("timeTo"),
 	}
 
-	s.sendSuccess(w, s.store.Event().FindByParams(searchModel))
+	res, err := s.store.Event().FindByParams(searchModel)
+
+	if err != nil {
+		s.sendError(w, http.StatusInternalServerError, err.Error())
+	}
+
+	s.sendSuccess(w, res)
 }
 
 func (s *Server) HandleGetEventsById(w http.ResponseWriter, r *http.Request) {
