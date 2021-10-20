@@ -44,7 +44,5 @@ func (e Event) Validate() error {
 
 		validation.Field(&e.Time, validation.By(DatetimeValidator(EventDateLayout, e.Time))),
 		validation.Field(&e.Timezone, validation.By(TimeZoneValidator(e.Timezone))),
-
-		validation.Field(&e.Notes, validation.Each(validation.Length(5, 50))),
 	)
 }

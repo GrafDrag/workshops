@@ -1,6 +1,7 @@
 package inmemory_test
 
 import (
+	"calendar/internal/config"
 	"calendar/internal/session/inmemory"
 	"github.com/stretchr/testify/assert"
 	"testing"
@@ -12,7 +13,7 @@ var (
 )
 
 func TestSession_Get(t *testing.T) {
-	s := inmemory.NewSession()
+	s := inmemory.NewSession(config.SessionConfig{})
 	if err := s.Set(sessionKey, sessionValue); err != nil {
 		t.Fatalf("faled set to session, %v", err)
 	}
@@ -24,14 +25,14 @@ func TestSession_Get(t *testing.T) {
 }
 
 func TestSession_Set(t *testing.T) {
-	s := inmemory.NewSession()
+	s := inmemory.NewSession(config.SessionConfig{})
 	err := s.Set(sessionKey, sessionValue)
 
 	assert.NoError(t, err)
 }
 
 func TestSession_Remove(t *testing.T) {
-	s := inmemory.NewSession()
+	s := inmemory.NewSession(config.SessionConfig{})
 	if err := s.Set(sessionKey, sessionValue); err != nil {
 		t.Fatalf("faled set to session, %v", err)
 	}
@@ -47,7 +48,7 @@ func TestSession_Remove(t *testing.T) {
 }
 
 func TestSession_Flash(t *testing.T) {
-	s := inmemory.NewSession()
+	s := inmemory.NewSession(config.SessionConfig{})
 	if err := s.Set(sessionKey, sessionValue); err != nil {
 		t.Fatalf("faled set to session, %v", err)
 	}

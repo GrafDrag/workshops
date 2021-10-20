@@ -22,7 +22,7 @@ type database struct {
 	DB       string
 }
 
-func TestDB(t *testing.T, configPath string) (*sql.DB, func(...string)) {
+func TestDB(t *testing.T, configPath string) (*Store, func(...string)) {
 	t.Helper()
 
 	config := &conf{}
@@ -41,7 +41,7 @@ func TestDB(t *testing.T, configPath string) (*sql.DB, func(...string)) {
 		t.Fatal("failed ping to database", err)
 	}
 
-	return db, func(tables ...string) {
+	return &Store{db: db}, func(tables ...string) {
 		if len(tables) > 0 {
 			q := fmt.Sprintf("TRUNCATE %s CASCADE", strings.Join(tables, ", "))
 			if _, err := db.Exec(q); err != nil {

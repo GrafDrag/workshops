@@ -1,7 +1,7 @@
 package auth_test
 
 import (
-	"calendar/internal/app/httpserver/auth"
+	"calendar/internal/auth"
 	"calendar/internal/model"
 	"github.com/stretchr/testify/assert"
 	"os"

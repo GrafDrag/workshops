@@ -1,145 +1,58 @@
 package httpserver
 
 import (
-	"calendar/internal/model"
+	"calendar/internal/auth"
+	"calendar/internal/controller"
 	"encoding/json"
-	validation "github.com/go-ozzo/ozzo-validation/v4"
 	"net/http"
 )
 
-type LoginForm struct {
-	Login    string `json:"login"`
-	Password string `json:"password"`
-	Token    string `json:"token"`
-}
-
-func (f LoginForm) Validate() error {
-	return validation.ValidateStruct(
-		&f,
-		validation.Field(&f.Login, validation.Required, validation.Length(6, 20)),
-		validation.Field(&f.Password, validation.Required, validation.Length(6, 20)),
-	)
-}
-
 func (s *Server) HandleAuth(w http.ResponseWriter, r *http.Request) {
-	form := &LoginForm{}
+	form := &controller.LoginForm{}
 
 	if err := json.NewDecoder(r.Body).Decode(form); err != nil {
 		s.sendError(w, http.StatusBadRequest, err.Error())
 		return
 	}
 
-	if err := form.Validate(); err != nil {
-		s.sendError(w, http.StatusBadRequest, err.Error())
+	c := controller.NewAuthController(s.Store, &s.IServer)
+	if token, err := c.Login(form); err != nil {
+		s.sendError(w, err.GetStatus(), err.Error())
 		return
-	}
-
-	u, err := s.store.User().FindByLogin(form.Login)
-	if err != nil {
-		u = &model.User{
-			Login:    form.Login,
-			Password: form.Password,
-		}
-
-		if err = s.store.User().Create(u); err != nil {
-			s.sendError(w, http.StatusInternalServerError, err.Error())
-			return
-		}
-	}
-
-	if err = u.CheckPassword(form.Password); err != nil {
-		s.sendError(w, http.StatusBadRequest, errIncorrectLoginOrPassword)
-		return
-	}
-
-	form.Password = ""
-	form.Token, err = s.jwtWrapper.GenerateToken(u)
-	if err != nil {
-		s.sendError(w, http.StatusInternalServerError, err.Error())
-		return
-	}
-
-	userSession, err := s.getUserSession(u.ID)
-	if err != nil {
-		s.sendError(w, http.StatusInternalServerError, err.Error())
-		return
-	}
-
-	userSession[form.Token] = true
-	err = s.setUserSession(u.ID, userSession)
-	if err != nil {
-		s.sendError(w, http.StatusInternalServerError, err.Error())
-		return
+	} else {
+		form.Token = token
 	}
 
 	s.sendSuccess(w, form)
 }
 
 func (s *Server) HandleLogout(w http.ResponseWriter, r *http.Request) {
-	userID := r.Context().Value(KeyUserID).(int)
-	userSession, err := s.getUserSession(userID)
+	userID := r.Context().Value(auth.KeyUserID).(int)
+	userSession, err := s.GetUserSession(userID)
 	if err != nil {
 		s.sendError(w, http.StatusInternalServerError, err.Error())
 		return
 	}
 
-	delete(userSession, s.authToken)
-	if err := s.setUserSession(userID, userSession); err != nil {
+	delete(userSession, s.AuthToken)
+	if err := s.SetUserSession(userID, userSession); err != nil {
 		s.sendError(w, http.StatusInternalServerError, err.Error())
 		return
 	}
 }
 
-type UpdateUserForm struct {
-	Login    string `json:"login"`
-	Timezone string `json:"timezone"`
-}
-
-func (f UpdateUserForm) Validate() error {
-	return validation.ValidateStruct(
-		&f,
-		validation.Field(&f.Login, validation.When(f.Login != "", validation.Length(6, 20))),
-		validation.Field(&f.Timezone, validation.By(model.TimeZoneValidator(f.Timezone))),
-	)
-}
-
 func (s *Server) HandelUpdateUser(w http.ResponseWriter, r *http.Request) {
-	form := &UpdateUserForm{}
+	form := &controller.UpdateUserForm{}
 
 	if err := json.NewDecoder(r.Body).Decode(form); err != nil {
 		s.sendError(w, http.StatusBadRequest, err.Error())
 		return
 	}
 
-	if err := form.Validate(); err != nil {
-		s.sendError(w, http.StatusBadRequest, err.Error())
-		return
-	}
+	c := controller.NewUserController(s.Store)
 
-	userID := r.Context().Value(KeyUserID).(int)
-	u, err := s.store.User().FindById(userID)
-	if err != nil {
-		s.sendError(w, http.StatusNotFound, errUserNotFound)
-		return
-	}
-
-	if form.Login != "" {
-		if form.Login != u.Login {
-			if _, err := s.store.User().FindByLogin(form.Login); err == nil {
-				s.sendError(w, http.StatusBadRequest, errUserExist)
-				return
-			}
-		}
-
-		u.Login = form.Login
-	}
-
-	if form.Timezone != "" {
-		u.Timezone = form.Timezone
-	}
-
-	if err := s.store.User().Update(u); err != nil {
-		s.sendError(w, http.StatusInternalServerError, err.Error())
+	if err := c.Update(r.Context(), form); err != nil {
+		s.sendError(w, err.GetStatus(), err.Error())
 		return
 	}
 

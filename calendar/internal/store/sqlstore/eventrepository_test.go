@@ -8,10 +8,9 @@ import (
 )
 
 func TestEventRepository_Create(t *testing.T) {
-	db, teardown := sqlstore.TestDB(t, configPath)
+	s, teardown := sqlstore.TestDB(t, configPath)
 	defer teardown("users", "events")
 
-	s := sqlstore.New(db)
 	e := newEvent(t, s)
 
 	assert.NoError(t, s.Event().Create(e))
@@ -19,10 +18,9 @@ func TestEventRepository_Create(t *testing.T) {
 }
 
 func TestEventRepository_FindById(t *testing.T) {
-	db, teardown := sqlstore.TestDB(t, configPath)
+	s, teardown := sqlstore.TestDB(t, configPath)
 	defer teardown("users", "events")
 
-	s := sqlstore.New(db)
 	e := newEvent(t, s)
 	if err := s.Event().Create(e); err != nil {
 		t.Fatal("could not create event")
@@ -36,10 +34,9 @@ func TestEventRepository_FindById(t *testing.T) {
 
 func TestEventRepository_Update(t *testing.T) {
 	title := "New title"
-	db, teardown := sqlstore.TestDB(t, configPath)
+	s, teardown := sqlstore.TestDB(t, configPath)
 	defer teardown("users", "events")
 
-	s := sqlstore.New(db)
 	e := newEvent(t, s)
 	if err := s.Event().Create(e); err != nil {
 		t.Fatal("could not create event")
@@ -54,10 +51,9 @@ func TestEventRepository_Update(t *testing.T) {
 }
 
 func TestEventRepository_Delete(t *testing.T) {
-	db, teardown := sqlstore.TestDB(t, configPath)
+	s, teardown := sqlstore.TestDB(t, configPath)
 	defer teardown("users", "events")
 
-	s := sqlstore.New(db)
 	e := newEvent(t, s)
 	if err := s.Event().Create(e); err != nil {
 		t.Fatal("could not create event")
@@ -70,10 +66,9 @@ func TestEventRepository_Delete(t *testing.T) {
 }
 
 func TestEventRepository_FindByParams(t *testing.T) {
-	db, teardown := sqlstore.TestDB(t, configPath)
+	s, teardown := sqlstore.TestDB(t, configPath)
 	defer teardown("users", "events")
 
-	s := sqlstore.New(db)
 	e := newEvent(t, s)
 	if err := s.Event().Create(e); err != nil {
 		t.Fatal("could not create event")

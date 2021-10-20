@@ -1,6 +1,7 @@
 package inmemory
 
 import (
+	"calendar/internal/config"
 	"fmt"
 )
 
@@ -8,7 +9,7 @@ type session struct {
 	sessions map[string]string
 }
 
-func NewSession() *session {
+func NewSession(config config.SessionConfig) *session {
 	return &session{
 		sessions: map[string]string{},
 	}

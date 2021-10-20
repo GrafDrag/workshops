@@ -3,7 +3,8 @@ package httpserver_test
 import (
 	"bytes"
 	"calendar/internal/app/httpserver"
-	"calendar/internal/app/httpserver/auth"
+	"calendar/internal/auth"
+	"calendar/internal/config"
 	"calendar/internal/model"
 	inmemory2 "calendar/internal/session/inmemory"
 	"calendar/internal/store/inmemory"
@@ -25,7 +26,7 @@ var (
 		Issuer:          "AuthService",
 		ExpirationHours: 24,
 	}
-	session = inmemory2.NewSession()
+	session = inmemory2.NewSession(config.SessionConfig{})
 )
 
 func TestUser_Login(t *testing.T) {
@@ -360,7 +361,7 @@ func TestServer_HandleDeleteEvent(t *testing.T) {
 }
 
 func mustMakeServer() *httpserver.Server {
-	return httpserver.NewServer(store, jwtWrapper, session)
+	return httpserver.NewServer(store, session, jwtWrapper)
 }
 
 func newGetLoginRequest(t *testing.T, login, password string) *http.Request {

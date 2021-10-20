@@ -1,4 +1,4 @@
-package httpserver
+package grpcserver
 
 import (
 	"calendar/internal/auth"
@@ -6,12 +6,17 @@ import (
 	"calendar/internal/session/redis"
 	"calendar/internal/store/sqlstore"
 	"github.com/sirupsen/logrus"
-	"net/http"
+	"net"
 )
 
 var server *Server
 
 func Start(config *config.Config) error {
+	lis, err := net.Listen("tcp", config.GRPC.BindAddr)
+	if err != nil {
+		return err
+	}
+
 	store, close, err := sqlstore.New(config.DB)
 	if err != nil {
 		return err
@@ -24,9 +29,9 @@ func Start(config *config.Config) error {
 	if err != nil {
 		return err
 	}
+	server = NewServer(store, wrapper, session)
 
-	server = NewServer(store, session, wrapper)
+	logrus.Infof("Server starting on %v...", config.GRPC.BindAddr)
 
-	logrus.Infof("Server starting on %v...", config.Rest.BindAddr)
-	return http.ListenAndServe(config.Rest.BindAddr, server)
+	return server.Serve(lis)
 }

@@ -1,7 +1,7 @@
 package main
 
 import (
-	"calendar/internal/app/httpserver"
+	"calendar/internal/app/grpcserver"
 	"calendar/internal/config"
 	"flag"
 	"github.com/BurntSushi/toml"
@@ -25,7 +25,7 @@ func main() {
 		log.Fatal(err)
 	}
 
-	if err := httpserver.Start(config); err != nil {
+	if err := grpcserver.Start(config); err != nil {
 		log.Fatal(err)
 	}
 }

@@ -9,7 +9,7 @@ import (
 var (
 	sessionKey   = "test_key"
 	sessionValue = "test_value"
-	configPath   = "../../../configs/httpserver.toml"
+	configPath   = "../../../configs/server.toml"
 )
 
 func TestSession_Get(t *testing.T) {

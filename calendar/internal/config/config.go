@@ -1,15 +1,25 @@
-package httpserver
+package config
 
 type Config struct {
-	BindAddr string `toml:"bind_addr"`
-	LogLevel string `toml:"log_level"`
+	Rest Rest `toml:"rest"`
+	GRPC Rest `toml:"gRPC"`
 
-	Jwt     jwtConfig     `toml:"jwt"`
+	Jwt     JWTConfig     `toml:"jwt"`
 	DB      DBConfig      `toml:"database"`
-	Session sessionConfig `toml:"session"`
+	Session SessionConfig `toml:"session"`
 }
 
-type jwtConfig struct {
+type GRPC struct {
+	BindAddr string `toml:"bind_addr"`
+	LogLevel string `toml:"log_level"`
+}
+
+type Rest struct {
+	BindAddr string `toml:"bind_addr"`
+	LogLevel string `toml:"log_level"`
+}
+
+type JWTConfig struct {
 	JwtSecretKey string `toml:"jwt_secret_key"`
 	JwtExpHours  int64  `toml:"jwt_expiration_hours"`
 }
@@ -22,7 +32,7 @@ type DBConfig struct {
 	DB       string
 }
 
-type sessionConfig struct {
+type SessionConfig struct {
 	Host     string
 	Port     int
 	Password string
@@ -30,8 +40,5 @@ type sessionConfig struct {
 }
 
 func NewConfig() *Config {
-	return &Config{
-		BindAddr: ":5000",
-		LogLevel: "debug",
-	}
+	return &Config{}
 }

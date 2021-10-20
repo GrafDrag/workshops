@@ -1,23 +1,17 @@
 package httpserver
 
 import (
+	"calendar/internal/app"
+	"calendar/internal/controller"
 	"calendar/internal/model"
 	"encoding/json"
 	"github.com/gorilla/mux"
 	"net/http"
-	"strconv"
 )
 
 func (s *Server) HandleListEvents(w http.ResponseWriter, r *http.Request) {
-	user, err := s.store.User().FindById(r.Context().Value(KeyUserID).(int))
-	if err != nil {
-		s.sendError(w, http.StatusNotFound, errUserNotFound)
-		return
-	}
-
 	q := r.URL.Query()
 	searchModel := model.SearchEvent{
-		UserID:   user.ID,
 		Title:    q.Get("title"),
 		Timezone: q.Get("timezone"),
 		DateFrom: q.Get("dateFrom"),
@@ -26,10 +20,12 @@ func (s *Server) HandleListEvents(w http.ResponseWriter, r *http.Request) {
 		TimeTo:   q.Get("timeTo"),
 	}
 
-	res, err := s.store.Event().FindByParams(searchModel)
+	c := controller.NewEventController(s.Store)
+	res, err := c.List(r.Context(), searchModel)
 
 	if err != nil {
-		s.sendError(w, http.StatusInternalServerError, err.Error())
+		s.sendError(w, err.GetStatus(), err.Error())
+		return
 	}
 
 	s.sendSuccess(w, res)
@@ -37,15 +33,11 @@ func (s *Server) HandleListEvents(w http.ResponseWriter, r *http.Request) {
 
 func (s *Server) HandleGetEventsById(w http.ResponseWriter, r *http.Request) {
 	params := mux.Vars(r)
-	id, err := strconv.Atoi(params["id"])
-	if err != nil {
-		s.sendError(w, http.StatusBadRequest, errInvalidParams)
-		return
-	}
+	c := controller.NewEventController(s.Store)
 
-	event, err := s.store.Event().FindById(id)
-	if err != nil || event.UserID != r.Context().Value(KeyUserID).(int) {
-		s.sendError(w, http.StatusNotFound, errEventNotFound)
+	event, err := c.FindById(r.Context(), params["id"])
+	if err != nil {
+		s.sendError(w, err.GetStatus(), err.Error())
 		return
 	}
 
@@ -58,20 +50,10 @@ func (s *Server) HandleCreateEvent(w http.ResponseWriter, r *http.Request) {
 		s.sendError(w, http.StatusInternalServerError, err.Error())
 	}
 
-	user, err := s.store.User().FindById(r.Context().Value(KeyUserID).(int))
-	if err != nil {
-		s.sendError(w, http.StatusNotFound, errUserNotFound)
-		return
-	}
+	c := controller.NewEventController(s.Store)
 
-	event.UserID = user.ID
-	if err := event.Validate(); err != nil {
-		s.sendError(w, http.StatusBadRequest, err.Error())
-		return
-	}
-
-	if err := s.store.Event().Create(event); err != nil {
-		s.sendError(w, http.StatusInternalServerError, err.Error())
+	if err := c.Create(r.Context(), event); err != nil {
+		s.sendError(w, err.GetStatus(), err.Error())
 		return
 	}
 
@@ -80,16 +62,11 @@ func (s *Server) HandleCreateEvent(w http.ResponseWriter, r *http.Request) {
 
 func (s *Server) HandleUpdateEvent(w http.ResponseWriter, r *http.Request) {
 	params := mux.Vars(r)
-	id, err := strconv.Atoi(params["id"])
-	if err != nil {
-		s.sendError(w, http.StatusBadRequest, errInvalidParams)
-		return
-	}
+	c := controller.NewEventController(s.Store)
 
-	event, err := s.store.Event().FindById(id)
-	if err != nil || event.UserID != r.Context().Value(KeyUserID).(int) {
-		s.sendError(w, http.StatusNotFound, errEventNotFound)
-		return
+	event, err := c.FindById(r.Context(), params["id"])
+	if err != nil {
+		s.sendError(w, err.GetStatus(), err.Error())
 	}
 
 	if err := json.NewDecoder(r.Body).Decode(event); err != nil {
@@ -97,8 +74,8 @@ func (s *Server) HandleUpdateEvent(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if err = s.store.Event().Update(event); err != nil {
-		s.sendError(w, http.StatusInternalServerError, err.Error())
+	if err := c.Update(r.Context(), event); err != nil {
+		s.sendError(w, err.GetStatus(), err.Error())
 		return
 	}
 
@@ -107,20 +84,10 @@ func (s *Server) HandleUpdateEvent(w http.ResponseWriter, r *http.Request) {
 
 func (s *Server) HandleDeleteEvent(w http.ResponseWriter, r *http.Request) {
 	params := mux.Vars(r)
-	id, err := strconv.Atoi(params["id"])
-	if err != nil {
-		s.sendError(w, http.StatusBadRequest, errInvalidParams)
-		return
-	}
+	c := controller.NewEventController(s.Store)
 
-	event, err := s.store.Event().FindById(id)
-	if err != nil || event.UserID != r.Context().Value(KeyUserID).(int) {
-		s.sendError(w, http.StatusNotFound, errEventNotFound)
-		return
-	}
-
-	if err := s.store.Event().Delete(event.ID); err != nil {
-		s.sendError(w, http.StatusNotFound, errEventNotFound)
+	if err := c.Delete(r.Context(), params["id"]); err != nil {
+		s.sendError(w, http.StatusNotFound, app.errEventNotFound)
 		return
 	}
 

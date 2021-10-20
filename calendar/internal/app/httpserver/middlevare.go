@@ -1,16 +1,12 @@
 package httpserver
 
 import (
+	"calendar/internal/app"
+	"calendar/internal/auth"
 	"context"
 	"net/http"
 	"strings"
 	"time"
-)
-
-type ctxUserKey int
-
-const (
-	KeyUserID ctxUserKey = iota
 )
 
 func (s *Server) authenticateUser(next http.Handler) http.Handler {
@@ -18,37 +14,37 @@ func (s *Server) authenticateUser(next http.Handler) http.Handler {
 		tokenHeader := r.Header.Get("Authorization")
 
 		if tokenHeader == "" {
-			s.sendError(w, http.StatusForbidden, errEmptyAuthToken)
+			s.sendError(w, http.StatusForbidden, app.ErrEmptyAuthToken)
 			return
 		}
 
 		splitted := strings.Split(tokenHeader, " ")
 		if len(splitted) != 2 {
-			s.sendError(w, http.StatusForbidden, errInvalidAuthToken)
+			s.sendError(w, http.StatusForbidden, app.ErrInvalidAuthToken)
 			return
 		}
 
-		claims, err := s.jwtWrapper.ValidateToken(splitted[1])
+		claims, err := s.JWTWrapper.ValidateToken(splitted[1])
 		if err != nil {
-			s.sendError(w, http.StatusForbidden, errInvalidAuthToken)
+			s.sendError(w, http.StatusForbidden, app.ErrInvalidAuthToken)
 			return
 		}
 
-		userSession, err := s.getUserSession(claims.ID)
+		userSession, err := s.GetUserSession(claims.ID)
 		if err != nil {
-			s.sendError(w, http.StatusForbidden, errSessionNotFound)
+			s.sendError(w, http.StatusForbidden, app.ErrSessionNotFound)
 			return
 		}
 
 		if _, ok := userSession[splitted[1]]; !ok {
-			s.sendError(w, http.StatusForbidden, errInvalidAuthToken)
+			s.sendError(w, http.StatusForbidden, app.ErrInvalidAuthToken)
 			return
 		}
 
-		s.logger.Infof("User ID #%v auth by token", claims.ID)
-		ctxUserID := context.WithValue(r.Context(), KeyUserID, claims.ID)
+		s.Logger.Infof("User ID #%v auth by token", claims.ID)
+		ctxUserID := context.WithValue(r.Context(), auth.KeyUserID, claims.ID)
 		r = r.WithContext(ctxUserID)
-		s.authToken = splitted[1]
+		s.AuthToken = splitted[1]
 
 		next.ServeHTTP(w, r)
 	})
@@ -64,12 +60,12 @@ func (s Server) setContentType(next http.Handler) http.Handler {
 
 func (s Server) logRequest(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		s.logger.Infof("started %s %s", r.Method, r.RequestURI)
+		s.Logger.Infof("started %s %s", r.Method, r.RequestURI)
 
 		start := time.Now()
 
 		next.ServeHTTP(w, r)
 
-		s.logger.Infof("completed with in %v", time.Since(start))
+		s.Logger.Infof("completed with in %v", time.Since(start))
 	})
 }

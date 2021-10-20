@@ -8,14 +8,13 @@ import (
 )
 
 var (
-	configPath = "../../../configs/httpserver.toml"
+	configPath = "../../../configs/server.toml"
 )
 
 func TestUserRepository_Create(t *testing.T) {
-	db, teardown := sqlstore.TestDB(t, configPath)
+	s, teardown := sqlstore.TestDB(t, configPath)
 	defer teardown("users")
 
-	s := sqlstore.New(db)
 	u := model.TestUser(t)
 
 	assert.NoError(t, s.User().Create(u))
@@ -23,10 +22,9 @@ func TestUserRepository_Create(t *testing.T) {
 }
 
 func TestUserRepository_FindById(t *testing.T) {
-	db, teardown := sqlstore.TestDB(t, configPath)
+	s, teardown := sqlstore.TestDB(t, configPath)
 	defer teardown("users")
 
-	s := sqlstore.New(db)
 	u := model.TestUser(t)
 	if err := s.User().Create(u); err != nil {
 		t.Fatal("could not create user")
@@ -39,10 +37,9 @@ func TestUserRepository_FindById(t *testing.T) {
 }
 
 func TestUserRepository_FindByLogin(t *testing.T) {
-	db, teardown := sqlstore.TestDB(t, configPath)
+	s, teardown := sqlstore.TestDB(t, configPath)
 	defer teardown("users")
 
-	s := sqlstore.New(db)
 	u := model.TestUser(t)
 	if err := s.User().Create(u); err != nil {
 		t.Fatal("could not create user")
@@ -56,10 +53,9 @@ func TestUserRepository_FindByLogin(t *testing.T) {
 
 func TestUserRepository_Update(t *testing.T) {
 	tz := "Europe/Kiev"
-	db, teardown := sqlstore.TestDB(t, configPath)
+	s, teardown := sqlstore.TestDB(t, configPath)
 	defer teardown("users")
 
-	s := sqlstore.New(db)
 	u := model.TestUser(t)
 	if err := s.User().Create(u); err != nil {
 		t.Fatal("could not create user")

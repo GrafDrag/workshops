@@ -1,16 +1,31 @@
 package auth
 
 import (
+	"calendar/internal/config"
 	"calendar/internal/model"
 	"errors"
 	"github.com/dgrijalva/jwt-go"
 	"time"
 )
 
+type ctxUserKey int
+
+const (
+	KeyUserID ctxUserKey = iota
+)
+
 type JwtWrapper struct {
 	SecretKey       string
 	ExpirationHours int64
 	Issuer          string
+}
+
+func NewJwtWrapper(config config.JWTConfig, issuer string) *JwtWrapper {
+	return &JwtWrapper{
+		SecretKey:       config.JwtSecretKey,
+		ExpirationHours: config.JwtExpHours,
+		Issuer:          issuer,
+	}
 }
 
 type JwtClaim struct {

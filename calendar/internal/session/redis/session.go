@@ -1,6 +1,7 @@
 package redis
 
 import (
+	"calendar/internal/config"
 	"context"
 	"fmt"
 	"github.com/go-redis/redis/v8"
@@ -14,10 +15,14 @@ type session struct {
 	redis *redis.Client
 }
 
-func NewSession(client *redis.Client) *session {
-	return &session{
-		redis: client,
+func NewSession(config config.SessionConfig) (*session, error) {
+	rdb, err := newRedisConnect(config.Host, config.Port, config.Password, config.DB)
+	if err != nil {
+		return nil, err
 	}
+	return &session{
+		redis: rdb,
+	}, nil
 }
 
 func (s *session) Get(key string) (string, error) {
@@ -60,4 +65,19 @@ func (s *session) Flash() error {
 	}
 
 	return nil
+}
+
+func newRedisConnect(host string, port int, password string, db int) (*redis.Client, error) {
+	rdb := redis.NewClient(&redis.Options{
+		Addr:     fmt.Sprintf("%s:%d", host, port),
+		Password: password, // no password set
+		DB:       db,       // use default DB
+	})
+
+	err := rdb.Ping(context.Background()).Err()
+	if err != nil {
+		return nil, err
+	}
+
+	return rdb, nil
 }
