@@ -32,7 +32,7 @@ func (n *Node) Scan(value interface{}) error {
 		return errors.New("type assertion to []byte failed")
 	}
 
-	return json.Unmarshal(b, &n)
+	return json.Unmarshal(b, n)
 }
 
 func (e Event) Validate() error {

@@ -106,6 +106,8 @@ func (i *AuthInterceptor) authorize(ctx context.Context, method string) (context
 		return ctx, status.Errorf(codes.Unauthenticated, app.ErrInvalidAuthToken)
 	}
 
+	i.server.AuthToken = accessToken
+
 	i.server.Logger.Infof("User ID #%v auth by token", claims.ID)
 	ctxUserID := context.WithValue(ctx, auth.KeyUserID, claims.ID)
 

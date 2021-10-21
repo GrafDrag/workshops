@@ -2,6 +2,7 @@ package model_test
 
 import (
 	"calendar/internal/model"
+	"encoding/json"
 	"github.com/stretchr/testify/assert"
 	"testing"
 )
@@ -57,4 +58,29 @@ func TestEvent_Validate(t *testing.T) {
 			}
 		})
 	}
+}
+
+func TestNode_Value(t *testing.T) {
+	t.Run("check get value", func(t *testing.T) {
+		n := model.Node{}
+
+		value, err := n.Value()
+		marshal, _ := json.Marshal(n)
+
+		assert.NoError(t, err)
+		assert.Equal(t, value, marshal)
+	})
+}
+
+func TestNode_Scan(t *testing.T) {
+	t.Run("check get value", func(t *testing.T) {
+		n := model.Node{"test"}
+		marshal, _ := json.Marshal(n)
+
+		var s model.Node
+		err := s.Scan(marshal)
+
+		assert.NoError(t, err)
+		assert.Equal(t, s, n)
+	})
 }

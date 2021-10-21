@@ -13,36 +13,6 @@ type EventRepository struct {
 	store *Store
 }
 
-func (r *EventRepository) FindByUser(userID int) ([]*model.Event, error) {
-	res := make([]*model.Event, 0)
-	rows, err := r.store.db.Query(
-		"SELECT id, user_id, title, description, time, timezone, duration, notes FROM events WHERE user_id = $1",
-		userID,
-	)
-
-	defer func(rows *sql.Rows) {
-		err := rows.Close()
-		if err != nil {
-			log.Print("failed closing row!")
-		}
-	}(rows)
-
-	if err != nil {
-		return nil, err
-	}
-
-	for rows.Next() {
-		e := &model.Event{}
-		err := rows.Scan(&e.ID, &e.UserID, &e.Title, &e.Description, &e.Time, &e.Timezone, &e.Duration, &e.Notes)
-		if err != nil {
-			return nil, err
-		}
-		res = append(res, e)
-	}
-
-	return res, nil
-}
-
 func (r *EventRepository) FindByParams(search model.SearchEvent) ([]*model.Event, error) {
 	res := make([]*model.Event, 0)
 	var where []string

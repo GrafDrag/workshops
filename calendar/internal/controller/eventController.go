@@ -91,13 +91,15 @@ func (c *EventController) Create(ctx context.Context, event *model.Event) *Respo
 
 func (c *EventController) Update(ctx context.Context, event *model.Event) *ResponseError {
 	repository := c.store.Event()
-	_, err := repository.FindById(event.ID)
-	if err != nil || event.UserID != ctx.Value(auth.KeyUserID).(int) {
+	res, err := repository.FindById(event.ID)
+	if err != nil || res.UserID != ctx.Value(auth.KeyUserID).(int) {
 		return &ResponseError{
 			status: http.StatusNotFound,
 			Err:    errEventNotFound,
 		}
 	}
+
+	event.UserID = res.UserID
 
 	if err := event.Validate(); err != nil {
 		return &ResponseError{
@@ -144,20 +146,22 @@ func (c *EventController) Delete(ctx context.Context, objId interface{}) *Respon
 	return nil
 }
 
-func getID(objId interface{}) (id int, err error) {
-	switch objId.(type) {
-	default:
-		err = errInvalidParams
-	case string:
-		id, err = strconv.Atoi(objId.(string))
-		if err != nil {
-			err = errInvalidParams
-		}
-	case int:
-		id = objId.(int)
-	case int32:
-		id = int(objId.(int32))
+func getID(objId interface{}) (int, error) {
+	if id, ok := objId.(int); ok {
+		return id, nil
 	}
 
-	return
+	if id, ok := objId.(int32); ok {
+		return int(id), nil
+	}
+
+	if id, ok := objId.(string); ok {
+		id, err := strconv.Atoi(id)
+		if err != nil {
+			return 0, err
+		}
+		return id, nil
+	}
+
+	return 0, errInvalidParams
 }

@@ -6,6 +6,7 @@ import (
 	"calendar/internal/session/redis"
 	"calendar/internal/store/sqlstore"
 	"github.com/sirupsen/logrus"
+	"log"
 	"net"
 )
 
@@ -21,7 +22,11 @@ func Start(config *config.Config) error {
 	if err != nil {
 		return err
 	}
-	defer close()
+	defer func() {
+		if err := close(); err != nil {
+			log.Fatal(err)
+		}
+	}()
 
 	wrapper := auth.NewJwtWrapper(config.Jwt, "AuthService")
 

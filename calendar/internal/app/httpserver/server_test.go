@@ -6,7 +6,7 @@ import (
 	"calendar/internal/auth"
 	"calendar/internal/config"
 	"calendar/internal/model"
-	inmemory2 "calendar/internal/session/inmemory"
+	sess "calendar/internal/session/inmemory"
 	"calendar/internal/store/inmemory"
 	"encoding/json"
 	"fmt"
@@ -26,7 +26,7 @@ var (
 		Issuer:          "AuthService",
 		ExpirationHours: 24,
 	}
-	session = inmemory2.NewSession(config.SessionConfig{})
+	session = sess.NewSession(config.SessionConfig{})
 )
 
 func TestUser_Login(t *testing.T) {

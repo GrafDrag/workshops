@@ -16,7 +16,11 @@ func Start(config *config.Config) error {
 	if err != nil {
 		return err
 	}
-	defer close()
+	defer func() {
+		if err := close(); err != nil {
+			return
+		}
+	}()
 
 	wrapper := auth.NewJwtWrapper(config.Jwt, "AuthService")
 

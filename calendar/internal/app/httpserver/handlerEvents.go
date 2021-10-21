@@ -1,7 +1,6 @@
 package httpserver
 
 import (
-	"calendar/internal/app"
 	"calendar/internal/controller"
 	"calendar/internal/model"
 	"encoding/json"
@@ -87,7 +86,7 @@ func (s *Server) HandleDeleteEvent(w http.ResponseWriter, r *http.Request) {
 	c := controller.NewEventController(s.Store)
 
 	if err := c.Delete(r.Context(), params["id"]); err != nil {
-		s.sendError(w, http.StatusNotFound, app.errEventNotFound)
+		s.sendError(w, err.GetStatus(), err.Error())
 		return
 	}
 

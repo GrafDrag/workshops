@@ -13,18 +13,6 @@ type EventRepository struct {
 	events map[int]*model.Event
 }
 
-func (r EventRepository) FindByUser(userID int) ([]*model.Event, error) {
-	var res []*model.Event
-
-	for _, event := range r.events {
-		if event.UserID == userID {
-			res = append(res, event)
-		}
-	}
-
-	return res, nil
-}
-
 func (r EventRepository) FindByParams(search model.SearchEvent) ([]*model.Event, error) {
 	res := make([]*model.Event, 0)
 
