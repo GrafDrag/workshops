@@ -6,6 +6,7 @@ import (
 	"flag"
 	"github.com/BurntSushi/toml"
 	"log"
+	"runtime"
 )
 
 var (
@@ -13,6 +14,8 @@ var (
 )
 
 func init() {
+	runtime.SetBlockProfileRate(1)
+	runtime.SetMutexProfileFraction(1)
 	flag.StringVar(&configPath, "config-path", "configs/server.toml", "path to config file")
 }
 

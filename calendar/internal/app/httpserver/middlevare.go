@@ -4,10 +4,45 @@ import (
 	"calendar/internal/app"
 	"calendar/internal/auth"
 	"context"
+	"github.com/gorilla/mux"
+	"github.com/prometheus/client_golang/prometheus"
+	"github.com/prometheus/common/log"
 	"net/http"
+	"strconv"
 	"strings"
 	"time"
 )
+
+func init() {
+	if err := prometheus.Register(totalRequest); err != nil {
+		log.Errorln("failed registrant request counter struct\n", err)
+	}
+
+	if err := prometheus.Register(responseStatus); err != nil {
+		log.Errorln("failed registrant request status struct\n", err)
+	}
+
+	if err := prometheus.Register(httpDuration); err != nil {
+		log.Errorln("failed registrant request duration struct\n", err)
+	}
+}
+
+type responseWriter struct {
+	http.ResponseWriter
+	statusCode int
+}
+
+func newResponseWriter(r http.ResponseWriter) *responseWriter {
+	return &responseWriter{
+		ResponseWriter: r,
+		statusCode:     http.StatusOK,
+	}
+}
+
+func (w responseWriter) WriteHeader(code int) {
+	w.statusCode = code
+	w.ResponseWriter.WriteHeader(code)
+}
 
 func (s *Server) authenticateUser(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -67,5 +102,47 @@ func (s Server) logRequest(next http.Handler) http.Handler {
 		next.ServeHTTP(w, r)
 
 		s.Logger.Infof("completed with in %v", time.Since(start))
+	})
+}
+
+var totalRequest = prometheus.NewCounterVec(
+	prometheus.CounterOpts{
+		Name: "http_request_total",
+		Help: "Number of get request",
+	},
+	[]string{"path"},
+)
+
+var responseStatus = prometheus.NewCounterVec(
+	prometheus.CounterOpts{
+		Name: "response_status",
+		Help: "Status of HTTP response",
+	},
+	[]string{"status"},
+)
+
+var httpDuration = prometheus.NewHistogramVec(
+	prometheus.HistogramOpts{
+		Name: "http_response_time_seconds",
+		Help: "Duration of HTTP requests.",
+	},
+	[]string{"path"},
+)
+
+func (s Server) prometheusMiddleware(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		route := mux.CurrentRoute(r)
+		path, _ := route.GetPathTemplate()
+
+		timer := prometheus.NewTimer(httpDuration.WithLabelValues(path))
+		rw := newResponseWriter(w)
+		next.ServeHTTP(rw, r)
+
+		statusCode := rw.statusCode
+
+		responseStatus.WithLabelValues(strconv.Itoa(statusCode)).Inc()
+		totalRequest.WithLabelValues(path).Inc()
+
+		timer.ObserveDuration()
 	})
 }

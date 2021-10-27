@@ -429,8 +429,7 @@ func TestServer_HandleUpdateEvent(t *testing.T) {
 			assert.Equal(t, resp.Status, pb.UpdateResponse_Successful)
 
 			got, _ := store.Event().FindById(event.ID)
-
-			assert.True(t, equals(got, event))
+			assert.Equal(t, got, event)
 		})
 	}
 }
@@ -501,18 +500,4 @@ func addEventToStore(t *testing.T, event *model.Event) {
 	if err := store.Event().Create(event); err != nil {
 		t.Fatal("could not create event")
 	}
-}
-
-func equals(got, wont *model.Event) bool {
-	for i, note := range got.Notes {
-		if note != wont.Notes[i] {
-			return false
-		}
-	}
-	return got.Title == wont.Title &&
-		got.Description == wont.Description &&
-		got.Time == wont.Time &&
-		got.Timezone == wont.Timezone &&
-		got.Duration == wont.Duration &&
-		len(got.Notes) == len(wont.Notes)
 }
