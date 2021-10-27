@@ -41,7 +41,7 @@ func newResponseWriter(r http.ResponseWriter) *responseWriter {
 
 func (w responseWriter) WriteHeader(code int) {
 	w.statusCode = code
-	w.ResponseWriter.WriteHeader(code)
+	w.ResponseWriter.WriteHeader(w.statusCode)
 }
 
 func (s *Server) authenticateUser(next http.Handler) http.Handler {
@@ -138,9 +138,7 @@ func (s Server) prometheusMiddleware(next http.Handler) http.Handler {
 		rw := newResponseWriter(w)
 		next.ServeHTTP(rw, r)
 
-		statusCode := rw.statusCode
-
-		responseStatus.WithLabelValues(strconv.Itoa(statusCode)).Inc()
+		responseStatus.WithLabelValues(strconv.Itoa(rw.statusCode)).Inc()
 		totalRequest.WithLabelValues(path).Inc()
 
 		timer.ObserveDuration()
