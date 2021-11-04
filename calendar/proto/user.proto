@@ -1,0 +1,35 @@
+syntax = "proto3";
+
+option go_package = "/pb";
+
+package user;
+
+message LogoutRequest {}
+
+message LogoutResponse {
+  enum Status {
+    Successful = 0;
+    Failed = 1;
+  };
+
+  Status status = 1;
+}
+
+message UserUpdateRequest {
+  string login = 1;
+  string timezone = 2;
+}
+
+message UserUpdateResponse {
+  enum Status {
+    Successful = 0;
+    Failed = 1;
+  };
+
+  Status status = 1;
+}
+
+service UserService {
+  rpc Logout (LogoutRequest) returns (LogoutResponse);
+  rpc Update (UserUpdateRequest) returns (UserUpdateResponse);
+}

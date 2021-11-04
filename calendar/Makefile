@@ -8,15 +8,21 @@ default: build
 
 build:
 	@ echo "-> build binary ..."
-	@ go build -ldflags "-X main.HashCommit=`git rev-parse HEAD` -X main.BuildStamp=`date -u '+%Y-%m-%d_%I:%M:%S%p'`" -o ./calendar .
+	@ go build  -ldflags "-X main.HashCommit=`git rev-parse HEAD` -X main.BuildStamp=`date -u '+%Y-%m-%d_%I:%M:%S%p'`" -o ./ ./cmd/apiserver
+	@ go build  -ldflags "-X main.HashCommit=`git rev-parse HEAD` -X main.BuildStamp=`date -u '+%Y-%m-%d_%I:%M:%S%p'`" -o ./ ./cmd/grpcserver
 .PHONY: build
 
 test:
 	@ echo "-> running tests ..."
-	@ CGO_ENABLED=1 go test -race ./...
+	@ CGO_ENABLED=1 go test -v -race ./...
 .PHONY: test
 
 lint:
 	@ echo "-> running linters ..."
 	@ golangci-lint run ./...
 .PHONY: lint
+
+cover:
+	@ echo "-> running coverage test ..."
+	@ go test -cover ./...
+.PHONY: cover
